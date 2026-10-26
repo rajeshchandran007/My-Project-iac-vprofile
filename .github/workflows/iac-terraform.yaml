@@ -58,29 +58,34 @@ jobs:
         id: terraform-plan
         run: terraform plan -no-color -input=false -out planfile
 
-      - name: Terraform Apply
-        id: terraform-apply
+      # - name: Terraform Apply
+      #   id: terraform-apply
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
+      #   run: terraform apply -auto-approve -input=false -parallelism=1 planfile
+
+      - name: Terraform destroy
+        id: terraform-destroy
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
-        run: terraform apply -auto-approve -input=false -parallelism=1 planfile
+        run: terraform destroy -auto-approve -input=false -parallelism=1
 
-      # Note: Post-deployment steps now check if 'terraform-apply' succeeded
-      - name: Get EKS Cluster Info
-        id: eks-info
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
-        run: |
-          aws eks describe-cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} --query "cluster.{endpoint:endpoint, certificateAuthorityData:certificateAuthority.data}" --output json > cluster-info.json
-          echo "Cluster info saved to cluster-info.json"  
+      # # Note: Post-deployment steps now check if 'terraform-apply' succeeded
+      # - name: Get EKS Cluster Info
+      #   id: eks-info
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+      #   run: |
+      #     aws eks describe-cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} --query "cluster.{endpoint:endpoint, certificateAuthorityData:certificateAuthority.data}" --output json > cluster-info.json
+      #     echo "Cluster info saved to cluster-info.json"  
 
-      - name: Get kubeconfig file
-        id: get-kubeconfig
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
-        run: |
-          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-          echo "Kubeconfig file updated"
+      # - name: Get kubeconfig file
+      #   id: get-kubeconfig
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+      #   run: |
+      #     aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+      #     echo "Kubeconfig file updated"
 
-      - name: Install ingress controller
-        id: install-ingress
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/aws/deploy.yaml
-          echo "Ingress controller installed"
+      # - name: Install ingress controller
+      #   id: install-ingress
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+      #   run: |
+      #     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/aws/deploy.yaml
+      #     echo "Ingress controller installed"
