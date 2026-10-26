@@ -1,9 +1,6 @@
 name: "Terraform IAC"
 on:
   workflow_dispatch:
-    branches:
-      - main
-      - stage
   push:
     branches:
       - main
@@ -34,7 +31,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
@@ -43,7 +40,6 @@ jobs:
 
       - name: Terraform Init
         id: terraform-init
-        working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
         run: terraform init \
           -backend-config="bucket=${{ env.BUCKET_TF_STATE }}" \
           -backend-config="key=terraform.tfstate" \
@@ -51,17 +47,14 @@ jobs:
 
       - name: Terraform format
         id: terraform-fmt
-        working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
         run: terraform fmt -check    
 
       - name: Terraform Validate
         id: terraform-validate
-        working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
         run: terraform validate  
 
       - name: Terraform Plan
         id: terraform-plan
-        working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
         run: terraform plan -no-color -input=false -out planfile
         continue-on-error: true
 
