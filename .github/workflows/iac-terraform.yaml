@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - stage
+      - main
     paths:
       - terraform/**
   pull_request:
@@ -56,15 +57,30 @@ jobs:
       - name: Terraform Plan
         id: terraform-plan
         run: terraform plan -no-color -input=false -out planfile
-        continue-on-error: true
 
-      - name: Terraform plan status
-        id: plan-status
-        if: steps.terraform-plan.outcome == 'failure'
-        run: echo "Terraform plan failed" && exit 1
+      - name: Terraform Apply
+        id: terraform-apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
+        run: terraform apply -auto-approve -input=false -parallelism=1 planfile
 
+      # Note: Post-deployment steps now check if 'terraform-apply' succeeded
+      - name: Get EKS Cluster Info
+        id: eks-info
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+        run: |
+          aws eks describe-cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} --query "cluster.{endpoint:endpoint, certificateAuthorityData:certificateAuthority.data}" --output json > cluster-info.json
+          echo "Cluster info saved to cluster-info.json"  
 
-      # - name: Terraform Apply
-      #   if: github.ref == 'refs/heads/main'
-      #   working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
-      #   run: terraform apply -auto-approve -var="region=${{ env.AWS_REGION }}" -var="clusterName=${{ env.EKS_CLUSTER_NAME }}"
+      - name: Get kubeconfig file
+        id: get-kubeconfig
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+          echo "Kubeconfig file updated"
+
+      - name: Install ingress controller
+        id: install-ingress
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-apply.outcome == 'success'
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/aws/deploy.yaml
+          echo "Ingress controller installed"
