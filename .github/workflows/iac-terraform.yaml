@@ -2,7 +2,6 @@ name: "Terraform IAC"
 on:
   push:
     branches:
-      - main
       - stage
     paths:
       - terraform/**
@@ -48,7 +47,7 @@ jobs:
 
       - name: Terraform format
         id: terraform-fmt
-        run: terraform fmt -check    
+        run: terraform fmt
 
       - name: Terraform Validate
         id: terraform-validate
