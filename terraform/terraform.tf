@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.25.0"
+      version = ">= 5.25.0"
     }
 
     random = {
@@ -22,18 +22,15 @@ terraform {
 
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.23.0"
+      version = ">= 2.23.0" # Changed from ~> 2.23.0 to prevent EKS module conflicts
     }
   }
 
   backend "s3" {
-    bucket = "gitopsterrastate"
+    bucket = "vprofileactions-015904251830"
     key    = "terraform.tfstate"
-    region = "us-east-2"
+    region = "ap-south-1"
   }
 
   required_version = "~> 1.6.3"
 }
-##
-##
-##
