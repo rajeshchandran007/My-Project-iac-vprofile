@@ -1,16 +1,17 @@
 name: "Terraform IAC"
 on:
-  push:
-    branches:
-      - stage
-      - main
-    paths:
-      - terraform/**
-  pull_request:
-    branches:
-      - main
-    paths:
-      - terraform/**
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - stage
+  #     - main
+  #   paths:
+  #     - terraform/**
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - terraform/**
 env:
   AWS_REGION: ap-south-1
   TF_VERSION: 1.6.3
@@ -63,11 +64,6 @@ jobs:
       #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
       #   run: terraform apply -auto-approve -input=false -parallelism=1 planfile
 
-      - name: Terraform destroy
-        id: terraform-destroy
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
-        run: terraform destroy -auto-approve -input=false -parallelism=1
-
       # # Note: Post-deployment steps now check if 'terraform-apply' succeeded
       # - name: Get EKS Cluster Info
       #   id: eks-info
@@ -89,3 +85,10 @@ jobs:
       #   run: |
       #     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/aws/deploy.yaml
       #     echo "Ingress controller installed"
+
+
+
+      # - name: Terraform destroy
+      #   id: terraform-destroy
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.terraform-plan.outcome == 'success'
+      #   run: terraform destroy -auto-approve -input=false -parallelism=1
